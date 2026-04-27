@@ -1,0 +1,113 @@
+========================================================================
+P4 TABLE SPEC  —  auto-generated from gate_dt model  (combined mode)
+========================================================================
+
+── METADATA STRUCT ──────────────────────────────────────────────────────
+
+struct gate_dt_meta_t {
+
+    // Stage 1 inputs: raw feature values
+    bit<16>  local_queue_occ;
+    bit<16>  min_cand_occ;
+    bit<16>  cand2_occ;
+    bit<16>  cand_occ_spread;
+    bit<16>  occ_vs_min_cand;
+    bit<16>  occ_vs_mean_cand;
+
+    // Stage 1 outputs: bucket indices
+    bit< 5>  bucket_local_queue_occ;       // 17 buckets
+    bit< 5>  bucket_min_cand_occ;       // 27 buckets
+    bit< 5>  bucket_cand2_occ;       // 29 buckets
+    bit< 7>  bucket_cand_occ_spread;       // 99 buckets
+    bit< 5>  bucket_occ_vs_min_cand;       // 25 buckets
+    bit< 6>  bucket_occ_vs_mean_cand;       // 60 buckets
+
+    bit< 1>  deflect;            // set by model_decision table
+}
+
+── STAGE 1: ENCODING TABLES ─────────────────────────────────────────────
+
+table encode_local_queue_occ {
+    key     = { ig_md.local_queue_occ : range; }
+    actions = { set_bucket_local_queue_occ; }
+    size    = 17;
+    // action set_bucket_local_queue_occ(bit<5> bucket):
+    //   ig_md.bucket_local_queue_occ = bucket;
+}
+
+table encode_min_cand_occ {
+    key     = { ig_md.min_cand_occ : range; }
+    actions = { set_bucket_min_cand_occ; }
+    size    = 27;
+    // action set_bucket_min_cand_occ(bit<5> bucket):
+    //   ig_md.bucket_min_cand_occ = bucket;
+}
+
+table encode_cand2_occ {
+    key     = { ig_md.cand2_occ : range; }
+    actions = { set_bucket_cand2_occ; }
+    size    = 29;
+    // action set_bucket_cand2_occ(bit<5> bucket):
+    //   ig_md.bucket_cand2_occ = bucket;
+}
+
+table encode_cand_occ_spread {
+    key     = { ig_md.cand_occ_spread : range; }
+    actions = { set_bucket_cand_occ_spread; }
+    size    = 99;
+    // action set_bucket_cand_occ_spread(bit<7> bucket):
+    //   ig_md.bucket_cand_occ_spread = bucket;
+}
+
+table encode_occ_vs_min_cand {
+    key     = { ig_md.occ_vs_min_cand : range; }
+    actions = { set_bucket_occ_vs_min_cand; }
+    size    = 25;
+    // action set_bucket_occ_vs_min_cand(bit<5> bucket):
+    //   ig_md.bucket_occ_vs_min_cand = bucket;
+}
+
+table encode_occ_vs_mean_cand {
+    key     = { ig_md.occ_vs_mean_cand : range; }
+    actions = { set_bucket_occ_vs_mean_cand; }
+    size    = 60;
+    // action set_bucket_occ_vs_mean_cand(bit<6> bucket):
+    //   ig_md.bucket_occ_vs_mean_cand = bucket;
+}
+
+── STAGE 2: COMBINED DECISION TABLE ─────────────────────────────────────
+
+table model_decision {
+    key = {
+        ig_md.bucket_local_queue_occ : range;
+        ig_md.bucket_min_cand_occ : range;
+        ig_md.bucket_cand2_occ : range;
+        ig_md.bucket_cand_occ_spread : range;
+        ig_md.bucket_occ_vs_min_cand : range;
+        ig_md.bucket_occ_vs_mean_cand : range;
+    }
+    actions     = { do_deflect; no_deflect; }
+    default_action = NoAction();
+    size        = 32;
+    // total match key width: 33 bits
+    // action do_deflect():
+    //   ig_md.deflect = 1;
+}
+
+── APPLY BLOCK ──────────────────────────────────────────────────────────
+
+    ig_md.deflect = 0;
+    encode_local_queue_occ.apply();
+    encode_min_cand_occ.apply();
+    encode_cand2_occ.apply();
+    encode_cand_occ_spread.apply();
+    encode_occ_vs_min_cand.apply();
+    encode_occ_vs_mean_cand.apply();
+
+    model_decision.apply();
+
+── SUMMARY ──────────────────────────────────────────────────────────────
+
+  Encoding tables  : 6  (total 257 entries)
+  Decision table   : 1  (32 entries after merge)
+  Decision         : hit = deflect, miss = no deflect

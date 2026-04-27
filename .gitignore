@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+.history/
+.claude/
+.codex
+
+.DS_Store
+
+NeuroDeflect_2026*.pdf
